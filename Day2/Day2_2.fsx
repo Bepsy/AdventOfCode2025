@@ -11,6 +11,15 @@ let inputParsed = input.Split [|',';'\r'; '\n'|]
                 |> Array.map (fun s -> (s.Split [|'-'|]))
                 |> Array.map (fun arr -> int64 arr[0], int64 arr[1])  
 
+
+let getSplitsizes length =
+    let rec getDivisions result current =
+        match length with
+        | _ when current > length -> result   
+        | _ when length%current = 0 -> getDivisions (current::result) (current+1)  
+        | _ -> getDivisions result (current+1) 
+    getDivisions [] 2 |> List.map (fun div -> length/div)
+
 let checkSequenceForSplitSize splitsize (sequence:string)  =
     let rec loop result seq =
         match (seq:string) with
@@ -19,14 +28,10 @@ let checkSequenceForSplitSize splitsize (sequence:string)  =
     let splittedSequence = loop [] sequence
     splittedSequence |> List.forall (fun s -> s = splittedSequence[0])
 
-let checkSequence (sequence:string) =
-    let rec loop splitsize (sequence:string) =
-        match splitsize with
-        | _ when (sequence.Length)%splitsize <> 0 -> loop (splitsize+1) sequence
-        | _ when splitsize = sequence.Length -> 0L
-        | _ when checkSequenceForSplitSize splitsize sequence -> int64 sequence
-        | _ -> loop (splitsize+1) sequence
-    loop 1 sequence
+let checkSequence (sequence:string) = getSplitsizes sequence.Length 
+                                    |> List.map (fun elem -> checkSequenceForSplitSize elem sequence)  
+                                    |> List.contains true
+                                    |> fun isvalid -> if isvalid then int64 sequence else 0 
 
 let loopRange (current, endRange) =
     let rec loop prevResult (current) (endRange) =
@@ -36,4 +41,6 @@ let loopRange (current, endRange) =
         | _  -> loop result (current + 1L) endRange
     loop 0L current endRange
 
+#time
 let result = inputParsed |> Array.map loopRange |> Array.sum
+#time
